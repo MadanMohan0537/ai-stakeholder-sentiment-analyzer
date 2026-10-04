@@ -16,36 +16,33 @@ A standalone local application built with Python, Gradio, SQLite, and optional s
 
 ## Quick start
 
-Requires Python 3.11 or 3.12 and an existing computer. The project was verified with Python 3.12. Initial dependency and model downloads require internet access. Once installed, offline workflows do not require an inference service.
+Requires Python 3.11 or 3.12 and an existing computer. Python 3.12 on Linux was used for verification.
 
 ```bash
 git clone https://github.com/MadanMohan0537/ai-stakeholder-sentiment-analyzer.git
 cd ai-stakeholder-sentiment-analyzer
-python -m venv .venv
+python run.py
 ```
 
-Activate the environment:
+Use `python3 run.py` on macOS/Linux if your command is named `python3`. On Windows, you can use `py -3.12 run.py`; PowerShell activation is not required.
+
+The launcher creates a project-specific `.venv`, installs the pinned dependencies when missing, creates `.env` from the free defaults only if it does not already exist, and starts the app. Existing settings and data are preserved. Initial dependency downloads need internet access. Later offline demo runs do not need an inference service or API key. The launcher does not download AI models, enable paid APIs, or deploy a cloud service.
+
+Open **http://127.0.0.1:7864**. Stop the app with Ctrl+C. Each project has its own environment, data folder, and port.
+
+Private repositories require authenticated GitHub access to clone. Alternatively, use GitHub's **Code → Download ZIP**, extract the project, and run `python run.py` inside its folder.
+
+Useful setup commands:
 
 ```bash
-# macOS / Linux
-source .venv/bin/activate
+python run.py --setup-only   # Install dependencies without starting the app
+python run.py --check        # Check local Ollama and the configured model
+python run.py --smoke-test   # Test one tiny synthetic response with local AI
 ```
 
-```powershell
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-```
+The checks return exit code `0` on success and `1` when setup or inference needs attention. `--check` only reads model metadata. `--smoke-test` uses your local model and compute; it never selects DeepSeek. Neither command downloads models automatically. A missing Ollama service does not prevent offline demo mode from running.
 
-Then install and run:
-
-```bash
-python -m pip install -r requirements.txt
-python app.py
-```
-
-Open **http://127.0.0.1:7864**. Stop the app with Ctrl+C. The five projects use separate default ports and can run independently. You can also use `.venv\Scripts\python.exe app.py` on Windows without activating the environment.
-
-Private repositories require your own authenticated GitHub access to clone. Alternatively, use GitHub's **Code → Download ZIP**, extract the project, and run the same setup commands inside its folder.
+Manual setup is also supported: create a virtual environment with `python -m venv .venv`, install `requirements.txt` with that environment's Python, then run `app.py`. On macOS/Linux use `.venv/bin/python`; on Windows use `.venv\Scripts\python.exe`.
 
 ## Try the included workflow
 
@@ -65,8 +62,9 @@ Private repositories require your own authenticated GitHub access to clone. Alte
    ```
 
 3. Make sure the Ollama application/service is running. If needed, start `ollama serve` in a separate terminal.
-4. Copy `.env.example` to `.env` (`cp .env.example .env` on macOS/Linux; `Copy-Item .env.example .env` in PowerShell).
-5. Select **Ollama (local)** in the app.
+4. Run `python run.py`. The launcher creates `.env` if needed.
+5. Expand **Set up free local AI**, click **Check local AI**, then **Test local AI with a sample**. A successful sample confirms a valid structured response, not the accuracy of every future result.
+6. Select **Ollama (local)** in the app and run the included project workflow.
 
 The default model is configurable through `OLLAMA_MODEL`. Local mode permits only a loopback Ollama server and rejects cloud model tags. Model size and context length affect RAM use and speed; no GPU purchase is required by the app, but performance depends on your hardware. A model download alone is not a validation of its output quality.
 
@@ -94,6 +92,8 @@ CSV columns: `id,date,stakeholder,message`. IDs must be unique, dates use `YYYY-
 
 | File or folder | Purpose |
 | --- | --- |
+| `run.py` | One-command environment setup and app launcher |
+| `local_ai_check.py` | Local model readiness and optional synthetic inference test |
 | `app.py` | Gradio screens, event wiring, and review/export workflow |
 | `domain.py` | Project-specific models, validation, and calculations |
 | `ai.py` | Explicit Ollama/DeepSeek adapters and JSON schema validation |
@@ -123,7 +123,10 @@ Offline mode uses a small English keyword lexicon and limited negation rules. It
 ## Troubleshooting
 
 - **Port already in use:** set `PORT` to an unused number in `.env` and restart.
-- **Cannot reach Ollama:** start the Ollama service, run `ollama list`, and check `OLLAMA_MODEL`.
+- **Cannot reach Ollama:** run `python run.py --check`, start the Ollama service, and check `OLLAMA_MODEL`.
+- **Model missing:** run the `ollama pull` command shown by the readiness check.
+- **Installed model cannot generate:** use `python run.py --smoke-test`; a smaller model or shorter input may fit your hardware better.
+- **Environment incomplete or Python unsupported:** install Python 3.11 or 3.12, rename the project `.venv`, and rerun the launcher. Keep `.env` and `data/` to preserve settings and records.
 - **Invalid structured output:** retry with a shorter input or a more capable local model. Invalid results are not silently accepted.
 - **Local context budget exceeded:** split the document or reduce the batch size.
 - **DeepSeek blocked:** `ALLOW_PAID_API=false` is the intended free default.

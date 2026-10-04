@@ -3,7 +3,8 @@ import app
 
 
 def test_ui_analyze_review_and_export():
-    assert app.build_app().config["dependencies"]
+    endpoints = {event["api_name"] for event in app.build_app().config["dependencies"]}
+    assert {"check_local_ai", "test_local_ai"} <= endpoints
     stats, note, table, trend, topics, raw, context = app.run(
         app.SAMPLE, "Offline demo"
     )

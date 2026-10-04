@@ -12,6 +12,7 @@ import gradio as gr
 
 from ai import PROVIDERS
 from common import history
+from local_ai_check import status_text
 
 CSS = """
 .gradio-container {max-width: 1180px !important; margin:auto;}
@@ -49,6 +50,19 @@ def provider_picker():
     gr.Markdown(
         "**Offline demo** uses transparent rules and templates. **Ollama** runs a local AI model. **DeepSeek** requires explicit setup and can incur charges."
     )
+    with gr.Accordion("Set up free local AI", open=False):
+        gr.Markdown(
+            "Install [Ollama](https://ollama.com/), run `ollama pull qwen3:4b`, and keep Ollama running. "
+            "If you choose another downloaded model, set `OLLAMA_MODEL` in `.env` and restart this app. "
+            "These checks use only Ollama on this computer."
+        )
+        check = gr.Button("Check local AI")
+        sample = gr.Button("Test local AI with a sample")
+        status = gr.Textbox(label="Local AI status", interactive=False, lines=4)
+        check.click(status_text, outputs=status, api_name="check_local_ai")
+        sample.click(
+            lambda: status_text(True), outputs=status, api_name="test_local_ai"
+        )
     return picker
 
 

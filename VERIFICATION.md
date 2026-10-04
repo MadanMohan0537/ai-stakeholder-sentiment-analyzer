@@ -9,4 +9,12 @@
 
 Run `python -m pytest -q` to repeat the automated checks. Results from an offline template or heuristic must not be presented as model-generated results.
 
-Delivered check results (Python 3.12): 13 automated tests passed. All five apps were also started as local HTTP servers and exercised through the Gradio client, including a primary queued action, session state, and export download. No live model or audio quality claims are implied.
+Delivered check results (Python 3.12 on Linux): **27 automated tests passed** in this repository; **136 tests passed** across the five separate projects.
+
+The follow-up checks cover the one-command launcher, preservation of existing settings, missing dependencies and failed installs, local model availability, absent services, invalid configuration, paid-provider isolation, and incomplete model responses. The app's existing sample workflow and export callbacks still pass.
+
+All five apps were started as local HTTP servers. Their primary queued workflows and both local-AI setup controls were exercised through the Gradio client. The setup controls used a local test server with an empty model list so missing-model handling was checked without downloading weights or incurring inference costs.
+
+The shared launcher was additionally exercised end to end on the meeting app in a fresh temporary folder containing spaces, from a different working directory. It created a real virtual environment, installed dependencies, preserved the generated settings on a second invocation, and launched the actual app. Windows and macOS launch paths are implemented but were not executed on those operating systems.
+
+`python run.py --smoke-test` is available for a real local model check on your computer. Automated provider tests use simulated responses; live Ollama inference, DeepSeek usage, and audio model quality remain unverified here. No paid API requests were made.
