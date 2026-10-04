@@ -50,3 +50,11 @@ The API settings tests cover masked key entry, explicit environment-key selectio
 Gradio's actual event dispatcher is exercised with separate browser session states. An applied test key reaches every project AI action, including meeting questions and planning revisions, while remaining absent from response data and another session. Generated results are saved and exported, and database/export files are checked for key leakage. Existing offline, launcher, persistence, and validation tests also pass.
 
 All DeepSeek responses in these checks are mocked. No real key was supplied and no live paid API requests were made. Actual account authorization, balance, and generation quality are not established by these tests.
+
+## Custom-provider and README verification — 2026-10-04
+
+**83 tests passed** in this repository; **409 passed** across all five apps on Python 3.12/Linux.
+
+New checks cover configurable chat-completions endpoints, model IDs, JSON-mode on/off, portable payloads without DeepSeek-specific options, generic environment variables, unauthenticated loopback servers, endpoint validation, and requiring a new key when changing endpoints. DeepSeek mode refuses to send credentials to another provider's host. A missing model-list endpoint is distinguished from failed generation. Every AI action is exercised through Gradio's event dispatcher in Custom API mode with mocked replies, and invalid structured output is rejected. Existing credential isolation, export, storage, and project workflow tests also pass.
+
+READMEs now explain each project's purpose and workflow, local setup, provider choices, endpoint examples, compatibility requirements, session-key behavior, troubleshooting, and contributor guidance. Example endpoints are not live-provider certifications. No live remote model requests or paid API calls were made in this verification run. Native non-compatible protocols require an adapter.

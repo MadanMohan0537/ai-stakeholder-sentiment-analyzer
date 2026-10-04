@@ -228,7 +228,15 @@ def test_browser_state_flows_to_all_ai_actions_and_is_not_returned(monkeypatch):
     async def exercise():
         applied = await demo.process_api(
             functions["apply_settings"],
-            [key, "deepseek-flash", True, False, None],
+            [
+                key,
+                "deepseek-flash",
+                True,
+                False,
+                None,
+                "https://api.deepseek.com",
+                True,
+            ],
             state=state,
         )
         assert applied["data"][0] is None and applied["data"][1] == ""

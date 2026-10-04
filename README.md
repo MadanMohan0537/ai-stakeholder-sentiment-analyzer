@@ -1,8 +1,10 @@
 # Signal — AI stakeholder sentiment analyzer
 
-A standalone local application built with Python, Gradio, SQLite, and optional structured AI generation. Includes a working offline demonstration, synthetic sample data, editable results, exports, and automated tests.
+Signal organizes expressed stakeholder feedback by project topic, sentiment, and urgency. Review exact evidence quotes, correct classifications, and export a concern report without treating text labels as measurements of a person’s emotions or performance.
 
-**No API key is required to start.** Offline demo mode uses deterministic rules or templates; it is explicitly not an AI model. Genuine AI generation uses your local Ollama model, or an explicitly enabled DeepSeek API connection.
+Built with Python, Gradio, SQLite, and optional schema-validated AI generation. Each repository is self-contained and includes sample inputs, editable results, exports, a setup launcher, and automated tests.
+
+**No API key is required to start.** Offline demo mode uses deterministic rules or templates; it is explicitly not an AI model. Genuine AI generation uses your local Ollama model, DeepSeek, or another explicitly configured OpenAI-compatible API.
 
 ## What you can do
 
@@ -71,25 +73,64 @@ The default model is configurable through `OLLAMA_MODEL`. Local mode permits onl
 
 `OLLAMA_CONTEXT` defaults to 16384 tokens. The app reserves output and template space and uses a conservative UTF-8 byte budget to reject oversized input rather than silently discard source text. Shorten inputs first; increase the context only when your hardware supports it. Model outputs must pass a JSON schema before they are used.
 
-## Optional DeepSeek API
+## AI providers and API configuration
 
-You can enter your API key directly in the app. No source-code edits or restart are needed.
+Choose the setup that fits your hardware, budget, and preferred model. The application is **not restricted to DeepSeek**.
 
-1. Expand **API settings · DeepSeek** beneath **Analysis mode**.
-2. Paste your key into **DeepSeek API key**; the field masks it.
-3. Set **DeepSeek model** to a model available to your account.
-4. Select **I allow DeepSeek requests that may charge my account** if you want to generate results. Leave it unchecked to configure and check the connection only.
-5. Click **Apply settings**. This makes no network request and clears the visible key field.
-6. Optionally click **Check API connection**. It reads DeepSeek's model list without requesting generation. It does not verify account balance or model accuracy.
-7. Select **DeepSeek (opt-in)** and run the project's AI action. Your project content is sent to DeepSeek for that action.
+| Analysis mode | What it uses | API key needed? |
+| --- | --- | --- |
+| **Offline demo** | Deterministic rules or templates; no language model | No |
+| **Ollama (local)** | A downloaded model on your computer | No |
+| **DeepSeek (opt-in)** | DeepSeek chat API with DeepSeek-specific settings | Yes |
+| **Custom API (OpenAI-compatible)** | Your endpoint and model using the chat-completions protocol | Usually; optional for a loopback server |
 
-To change the model or opt-in choice, edit the controls and click **Apply settings** again. Leave the key field blank to retain the applied key, or enter a replacement. Changes take effect when applied. **Clear session key** removes the session credential and disables generation. It does not cancel requests already in progress.
+### Configure an API in the app
 
-The app retains the applied key only in server memory for that browser session, for up to one hour after applying it. Reloading the page, expiry, or restarting the app requires applying settings again. Keys are not included in report history, SQLite data, exports, source files, or GitHub. Each browser session has separate credentials. This remains a local single-user application, not an authenticated multi-user hosting service.
+1. Start the app and expand **API settings · DeepSeek and custom providers** beneath **Analysis mode**.
+2. Set **API base URL** and **Model ID** for your chosen provider.
+3. Enter your **API key** in the password-masked field.
+4. Enable **I allow API requests that may charge my account** when you intend to generate results. You can leave it disabled to apply settings and check model metadata only.
+5. Click **Apply settings**. This does not contact the provider and clears the visible key field.
+6. Optionally click **Check API connection** to request the provider's model list.
+7. Select **DeepSeek (opt-in)** for the DeepSeek endpoint, or **Custom API (OpenAI-compatible)** for another compatible endpoint, then run the project's workflow.
 
-If you already keep a key in your local `.env`, select **Use the key configured in my local .env instead**, opt in as appropriate, and click **Apply settings**. This uses the configured key without displaying it. Entering a key in the app never writes or changes `.env`. The UI always requires its own opt-in; an environment flag cannot silently enable a new browser session.
+Use the API base URL, **not** the full `/chat/completions` URL. For example:
 
-For direct Python/script use, the previous environment setup remains available:
+| Service | API base URL | Model ID |
+| --- | --- | --- |
+| DeepSeek | `https://api.deepseek.com` | A model currently available to your account; the app defaults to `deepseek-flash` |
+| OpenAI | `https://api.openai.com/v1` | Your enabled chat-completions model |
+| OpenRouter | `https://openrouter.ai/api/v1` | The provider/model ID from its catalog |
+| Groq | `https://api.groq.com/openai/v1` | A model from its current catalog |
+| Together AI | `https://api.together.xyz/v1` | A supported chat model from its catalog |
+| LM Studio or a compatible local server | `http://127.0.0.1:1234/v1` | The loaded model's ID; adjust the port to match your server |
+
+These are configuration examples, not a claim that every model on those services has been tested. Providers control available models, pricing, context limits, and access permissions. Use their current documentation when choosing a model.
+
+### Compatibility and structured output
+
+Custom mode sends `POST {base_url}/chat/completions` with `model`, `messages`, and `stream: false`. When a key is present, it uses `Authorization: Bearer …`. The response must contain `choices[0].message.content` with JSON matching this project's schema.
+
+**Request JSON mode** adds `response_format: {"type": "json_object"}`. Turn it off if your provider or model rejects that option, then apply settings again. The schema remains in the prompt, and the app still validates the returned JSON. Turning off JSON mode does not allow arbitrary prose or malformed results.
+
+Custom mode omits DeepSeek-specific thinking settings and optional sampling/token parameters so models can use their own defaults. A model that only supports a different protocol, special headers, an incompatible response shape, or a separate Responses API needs an adapter or a compatible gateway. Native Anthropic Messages and provider-specific Azure deployments are not directly supported by this adapter.
+
+The connection check uses `GET {base_url}/models` without requesting generation. Some otherwise compatible services do not implement that endpoint; a 404/405 is reported without claiming generation cannot work. A successful metadata check does not establish sufficient balance, generation quality, or schema accuracy.
+
+### Keys, sessions, and costs
+
+- Applied keys stay in server memory for the browser session, for up to one hour after applying settings. Reloading, expiry, or restarting requires applying settings again.
+- Keys are excluded from SQLite records, report history, exports, and source files. Entering a key in the app never writes `.env`.
+- To change the model or JSON/usage options, leave the key field blank and apply again. If you change the endpoint, re-enter its key; the app will not silently forward an existing key to a new endpoint.
+- **Clear session key** removes the applied credential and disables API generation. It does not cancel requests already in progress.
+- Remote endpoints require HTTPS. HTTP is accepted only for loopback servers, where an API key is optional. API requests still require explicit opt-in, including for a free local compatible server.
+- Remote generation sends project input to the selected provider and may incur charges. Offline demo and Ollama remain the paths without hosted API usage. There is no automatic paid-provider fallback.
+
+### Optional environment configuration
+
+The UI can use an existing local key: select **Use the key configured in my local .env instead** and click **Apply settings**. A DeepSeek endpoint uses `DEEPSEEK_API_KEY`; other endpoints use `AI_API_KEY`. Set the endpoint and model in the UI as well. Each browser session requires its own usage opt-in, regardless of environment flags.
+
+For direct Python/script use, DeepSeek settings are:
 
 ```dotenv
 ALLOW_PAID_API=true
@@ -97,7 +138,17 @@ DEEPSEEK_API_KEY=your_key_here
 DEEPSEEK_MODEL=deepseek-flash
 ```
 
-DeepSeek's hosted API may charge per token and is outside the strict $0 path. Check [current pricing and model availability](https://api-docs.deepseek.com/quick_start/pricing/). Offline demo and Ollama need no API key, and there is no automatic fallback to a paid provider. Never commit a real key; `.env` is ignored.
+For direct Python/script use with `Custom API (OpenAI-compatible)`:
+
+```dotenv
+ALLOW_PAID_API=true
+AI_BASE_URL=https://api.openai.com/v1
+AI_API_KEY=your_key_here
+AI_MODEL=your_model_id
+AI_JSON_MODE=true
+```
+
+Never commit a real key. `.env` is ignored; `.env.example` contains placeholders and free defaults. Review your provider's prices and data policies before using it.
 
 ## Input format
 
@@ -118,8 +169,8 @@ Offline concern previews are limited to 1,200 characters and end with an ellipsi
 | `verify_example.py` | Repeatable live local AI check using this project's synthetic example |
 | `app.py` | Gradio screens, event wiring, and review/export workflow |
 | `domain.py` | Project-specific models, validation, and calculations |
-| `api_settings.py` | Session credential handling and metadata connection checks |
-| `ai.py` | Explicit Ollama/DeepSeek adapters and JSON schema validation |
+| `api_settings.py` | Session credentials, endpoint validation, and metadata connection checks |
+| `ai.py` | Ollama, DeepSeek, and custom chat-completions adapters with schema validation |
 | `common.py` | SQLite persistence, input validation, and safe CSV exports |
 | `ui.py` | Shared-in-this-repository visual helpers and local launch settings |
 | `examples/` | Synthetic sample inputs |
@@ -161,8 +212,17 @@ Offline mode uses a small English keyword lexicon and limited negation rules. It
 - **Environment incomplete or Python unsupported:** install Python 3.11 or 3.12, rename the project `.venv`, and rerun the launcher. Keep `.env` and `data/` to preserve settings and records.
 - **Invalid structured output:** retry with a shorter input or a more capable local model. Invalid results are not silently accepted.
 - **Local context budget exceeded:** split the document or reduce the batch size.
-- **DeepSeek blocked:** `ALLOW_PAID_API=false` is the intended free default.
+- **API generation blocked:** apply session settings with usage opt-in enabled; script usage requires `ALLOW_PAID_API=true`.
+- **Provider rejects JSON mode:** uncheck **Request JSON mode** and apply settings again. Output must still be valid schema-matching JSON.
+- **Wrong endpoint or model:** use a base URL without `/chat/completions` and a model ID offered by that endpoint.
+- **Endpoint changed:** re-enter its API key before applying settings.
 - **Changed `.env` values not taking effect:** restart the application.
+
+## Development and contributions
+
+Use the tests above before proposing a change. Keep project calculations and validation in `domain.py`, provider request logic in `ai.py`, credential handling in `api_settings.py`, and interface wiring in `app.py`/`ui.py`. Provider tests mock HTTP calls so contributing does not require API spending.
+
+To add a native API adapter, add an explicit provider choice, translate the existing messages and schema into that provider's request, and pass its output through the same schema validation. Include tests for its authentication, error responses, incomplete output, and session isolation. Never put credentials into report context or introduce automatic paid fallbacks.
 
 ## License
 

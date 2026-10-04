@@ -11,10 +11,15 @@ import httpx
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
-from api_settings import current_settings
+from api_settings import APISettings, current_settings, is_loopback, validate_base_url
 
 load_dotenv()
-PROVIDERS = ["Offline demo", "Ollama (local)", "DeepSeek (opt-in)"]
+PROVIDERS = [
+    "Offline demo",
+    "Ollama (local)",
+    "DeepSeek (opt-in)",
+    "Custom API (OpenAI-compatible)",
+]
 
 
 class AIError(ValueError):
@@ -60,7 +65,7 @@ def local_settings() -> tuple[str, str, int]:
 
 def generate(schema: type[BaseModel], instruction: str, source: str, provider: str):
     if provider not in PROVIDERS[1:]:
-        raise AIError("Select Ollama or DeepSeek for AI generation.")
+        raise AIError("Select Ollama, DeepSeek, or Custom API for AI generation.")
     if len(source) > 60000:
         raise AIError(
             "Input exceeds 60,000 characters. Split it into smaller documents."
@@ -102,37 +107,53 @@ def generate(schema: type[BaseModel], instruction: str, source: str, provider: s
         headers = {}
     else:
         session = current_settings()
-        allowed = (
-            session.allow_paid
-            if session is not None
-            else os.getenv("ALLOW_PAID_API", "false").lower() == "true"
-        )
-        if not allowed:
-            raise AIError(
-                "DeepSeek may charge for usage. In API settings, opt in and click Apply settings. For scripted use, set ALLOW_PAID_API=true in .env only if your usage is covered."
+        custom = provider == PROVIDERS[3]
+        if session is None:
+            session = APISettings(
+                api_key=os.getenv(
+                    "AI_API_KEY" if custom else "DEEPSEEK_API_KEY", ""
+                ).strip(),
+                model=os.getenv(
+                    "AI_MODEL" if custom else "DEEPSEEK_MODEL",
+                    "" if custom else "deepseek-flash",
+                ),
+                allow_paid=os.getenv("ALLOW_PAID_API", "false").lower() == "true",
+                base_url=os.getenv("AI_BASE_URL", "")
+                if custom
+                else "https://api.deepseek.com",
+                json_mode=os.getenv("AI_JSON_MODE", "true").lower() == "true",
             )
-        key = (
-            session.api_key
-            if session is not None
-            else os.getenv("DEEPSEEK_API_KEY", "").strip()
-        )
-        if not key:
+        if not session.allow_paid:
             raise AIError(
-                "Enter and apply your API key in API settings, or set DEEPSEEK_API_KEY for scripted use. Never commit it."
+                "API requests may charge for usage. In API settings, opt in and click Apply settings. For scripts, use ALLOW_PAID_API=true only if intended."
             )
-        url = "https://api.deepseek.com/chat/completions"
-        headers = {"Authorization": "Bearer " + key}
-        payload = {
-            "model": session.model
-            if session is not None
-            else os.getenv("DEEPSEEK_MODEL", "deepseek-flash"),
-            "messages": messages,
-            "response_format": {"type": "json_object"},
-            "temperature": 0.1,
-            "max_tokens": 7000,
-            "stream": False,
-            "thinking": {"type": "disabled"},
-        }
+        try:
+            base = validate_base_url(session.base_url)
+        except ValueError as exc:
+            raise AIError(str(exc)) from exc
+        if not custom and urlparse(base).hostname != "api.deepseek.com":
+            raise AIError(
+                "These settings target another provider. Select Custom API (OpenAI-compatible), or apply a DeepSeek endpoint and key."
+            )
+        if not session.model.strip():
+            raise AIError(
+                "Enter a model ID in API settings or set AI_MODEL for scripts."
+            )
+        if not session.api_key and not is_loopback(base):
+            raise AIError(
+                "Enter and apply your API key in API settings. Never commit it."
+            )
+        url = base + "/chat/completions"
+        headers = (
+            {"Authorization": "Bearer " + session.api_key} if session.api_key else {}
+        )
+        payload = {"model": session.model, "messages": messages, "stream": False}
+        if session.json_mode:
+            payload["response_format"] = {"type": "json_object"}
+        if not custom:
+            payload.update(
+                temperature=0.1, max_tokens=7000, thinking={"type": "disabled"}
+            )
     try:
         response = httpx.post(
             url,
@@ -140,7 +161,7 @@ def generate(schema: type[BaseModel], instruction: str, source: str, provider: s
             headers=headers,
             timeout=180,
             follow_redirects=False,
-            trust_env=provider != PROVIDERS[1],
+            trust_env=provider != PROVIDERS[1] and not is_loopback(base),
         )
         response.raise_for_status()
         data = response.json()

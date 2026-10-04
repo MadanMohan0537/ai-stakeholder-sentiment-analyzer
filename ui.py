@@ -49,7 +49,7 @@ def metrics(values: dict):
 def provider_picker():
     picker = gr.Dropdown(PROVIDERS, value=PROVIDERS[0], label="Analysis mode")
     gr.Markdown(
-        "**Offline demo** uses transparent rules and templates. **Ollama** runs a local AI model. **DeepSeek** requires explicit setup and can incur charges."
+        "**Offline demo** uses transparent rules and templates. **Ollama** runs a local AI model. **DeepSeek** and **Custom API** use your configured endpoint and may incur charges."
     )
     with gr.Accordion("Set up free local AI", open=False):
         gr.Markdown(
@@ -66,27 +66,37 @@ def provider_picker():
         )
     # State is per browser session and is never included in report context.
     credentials = gr.State(APISettings(), time_to_live=3600)
-    with gr.Accordion("API settings · DeepSeek", open=False):
+    with gr.Accordion("API settings · DeepSeek and custom providers", open=False):
         gr.Markdown(
-            "Enter your DeepSeek API key here, then click **Apply settings**. "
+            "Enter your provider API key here, then click **Apply settings**. "
             "The key stays in this session's memory for up to one hour; it is not saved to files or reports. "
-            "Reloading the page requires applying settings again. DeepSeek receives project content when you run AI generation."
+            "Reloading the page requires applying settings again. The configured provider receives project content when you run AI generation."
         )
         api_key = gr.Textbox(
-            label="DeepSeek API key",
+            label="API key",
             type="password",
             value="",
             max_length=512,
             info="Leave blank to keep the key already applied in this session.",
         )
+        api_base = gr.Textbox(
+            label="API base URL",
+            value="https://api.deepseek.com",
+            info="DeepSeek: https://api.deepseek.com · OpenAI: https://api.openai.com/v1 · Other providers: their OpenAI-compatible base URL.",
+        )
+        json_mode = gr.Checkbox(
+            label="Request JSON mode",
+            value=True,
+            info="Uncheck if your model rejects response_format. All results still require valid JSON.",
+        )
         api_model = gr.Textbox(
-            label="DeepSeek model", value=os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
+            label="Model ID", value=os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
         )
         use_env = gr.Checkbox(
             label="Use the key configured in my local .env instead", value=False
         )
         paid = gr.Checkbox(
-            label="I allow DeepSeek requests that may charge my account", value=False
+            label="I allow API requests that may charge my account", value=False
         )
         with gr.Row():
             apply = gr.Button("Apply settings")
@@ -97,7 +107,15 @@ def provider_picker():
         )
         apply.click(
             safe(apply_settings),
-            inputs=[api_key, api_model, paid, use_env, credentials],
+            inputs=[
+                api_key,
+                api_model,
+                paid,
+                use_env,
+                credentials,
+                api_base,
+                json_mode,
+            ],
             outputs=[credentials, api_key, api_status],
             api_name=False,
         )
