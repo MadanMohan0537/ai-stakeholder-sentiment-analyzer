@@ -1,0 +1,7 @@
+id,date,stakeholder,message
+F1,2026-10-01,Client lead,"The design looks great, but I am worried about the launch deadline."
+F2,2026-10-02,Finance,"Can you clarify the budget change before we approve the invoice?"
+F3,2026-10-02,Delivery lead,"We are blocked by the missing security response. This is urgent."
+F4,2026-10-03,Client lead,"Thanks for the update. The revised schedule is approved."
+F5,2026-10-04,QA lead,"The accessibility test results are excellent."
+F6,2026-10-04,Sponsor,"Sure, whatever."

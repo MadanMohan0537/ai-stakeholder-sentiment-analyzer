@@ -1,0 +1,6 @@
+gradio==5.50.0
+plotly==6.9.0
+pydantic==2.12.3
+httpx[socks]==0.28.1
+python-dotenv==1.2.4
+pandas==2.3.3
