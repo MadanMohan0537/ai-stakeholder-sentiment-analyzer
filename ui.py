@@ -11,6 +11,7 @@ os.environ.setdefault("GRADIO_ANALYTICS_ENABLED", "False")
 import gradio as gr
 
 from ai import PROVIDERS
+from api_settings import APISettings, apply_settings, check_connection, clear_settings
 from common import history
 from local_ai_check import status_text
 
@@ -63,7 +64,55 @@ def provider_picker():
         sample.click(
             lambda: status_text(True), outputs=status, api_name="test_local_ai"
         )
-    return picker
+    # State is per browser session and is never included in report context.
+    credentials = gr.State(APISettings(), time_to_live=3600)
+    with gr.Accordion("API settings · DeepSeek", open=False):
+        gr.Markdown(
+            "Enter your DeepSeek API key here, then click **Apply settings**. "
+            "The key stays in this session's memory for up to one hour; it is not saved to files or reports. "
+            "Reloading the page requires applying settings again. DeepSeek receives project content when you run AI generation."
+        )
+        api_key = gr.Textbox(
+            label="DeepSeek API key",
+            type="password",
+            value="",
+            max_length=512,
+            info="Leave blank to keep the key already applied in this session.",
+        )
+        api_model = gr.Textbox(
+            label="DeepSeek model", value=os.getenv("DEEPSEEK_MODEL", "deepseek-flash")
+        )
+        use_env = gr.Checkbox(
+            label="Use the key configured in my local .env instead", value=False
+        )
+        paid = gr.Checkbox(
+            label="I allow DeepSeek requests that may charge my account", value=False
+        )
+        with gr.Row():
+            apply = gr.Button("Apply settings")
+            check_api = gr.Button("Check API connection")
+            clear = gr.Button("Clear session key")
+        api_status = gr.Markdown(
+            "No session key applied. Offline demo and Ollama do not need an API key."
+        )
+        apply.click(
+            safe(apply_settings),
+            inputs=[api_key, api_model, paid, use_env, credentials],
+            outputs=[credentials, api_key, api_status],
+            api_name=False,
+        )
+        check_api.click(
+            safe(check_connection),
+            inputs=credentials,
+            outputs=api_status,
+            api_name=False,
+        )
+        clear.click(
+            clear_settings,
+            outputs=[credentials, api_key, paid, use_env, api_status],
+            api_name=False,
+        )
+    return picker, credentials
 
 
 def safe(fn):

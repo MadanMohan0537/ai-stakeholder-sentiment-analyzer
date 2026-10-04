@@ -7,6 +7,7 @@ import gradio as gr
 import pandas as pd
 import plotly.express as px
 
+from api_settings import with_api_settings
 from common import csv_text, export_text, read_upload, save_report
 from domain import Analysis, analyze, read_feedback, records, summary, validate_analysis
 from ui import CSS, hero, history_panel, launch, metrics, provider_picker, safe
@@ -126,7 +127,7 @@ def build_app():
                         example = gr.Button("Load sample feedback")
                         file = gr.File(label="Import CSV", file_types=[".csv"])
                 with gr.Column(scale=1):
-                    provider = provider_picker()
+                    provider, credentials = provider_picker()
                     gr.Markdown(
                         "Analyze up to 100 messages per batch. Use feedback you are authorized to process. Local mode keeps it on your computer; selecting DeepSeek sends it to that provider."
                     )
@@ -153,8 +154,8 @@ def build_app():
             example.click(lambda: SAMPLE, outputs=text)
             file.change(safe(read_upload), inputs=file, outputs=text)
             go.click(
-                run,
-                inputs=[text, provider],
+                with_api_settings(run),
+                inputs=[text, provider, credentials],
                 outputs=[stats, note, table, trend, topics, raw, context],
             )
             save_btn.click(save, inputs=[raw, context], outputs=[saved, files])

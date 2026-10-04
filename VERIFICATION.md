@@ -40,3 +40,13 @@ A real local Ollama verification was attempted using Ollama 0.35.1. The runtime 
 Use `python run.py --verify-example` on a computer with a downloaded Ollama model to repeat the project's example checks. It uses synthetic data, never selects DeepSeek, and does not save application records. A passing sample is an integration check, not a general accuracy benchmark. The existing `--smoke-test` remains the smaller structured-response check.
 
 The new example command was exercised through the launcher for all five apps against a simulated local HTTP provider. Success returned exit code 0 without creating application records; a semantically incomplete meeting result correctly returned exit code 1. These checks validate the command and error path, not live model accuracy.
+
+## In-app API settings verification — 2026-10-04
+
+Python 3.12 on Linux: **60 automated tests passed** here; **294 passed** across the five repositories.
+
+The API settings tests cover masked key entry, explicit environment-key selection, retained keys when editing settings, clear/replacement behavior, paid-request gating, model overrides, concurrent request isolation, and context cleanup after errors. Model-list checks use mocked success, missing-model, authentication, timeout, and malformed responses without requesting generation.
+
+Gradio's actual event dispatcher is exercised with separate browser session states. An applied test key reaches every project AI action, including meeting questions and planning revisions, while remaining absent from response data and another session. Generated results are saved and exported, and database/export files are checked for key leakage. Existing offline, launcher, persistence, and validation tests also pass.
+
+All DeepSeek responses in these checks are mocked. No real key was supplied and no live paid API requests were made. Actual account authorization, balance, and generation quality are not established by these tests.

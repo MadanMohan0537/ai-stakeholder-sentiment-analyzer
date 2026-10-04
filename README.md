@@ -73,9 +73,23 @@ The default model is configurable through `OLLAMA_MODEL`. Local mode permits onl
 
 ## Optional DeepSeek API
 
-DeepSeek's hosted API may charge per token. This is not part of the strict $0 path. It is disabled even if a key is present until you explicitly opt in.
+You can enter your API key directly in the app. No source-code edits or restart are needed.
 
-In your local `.env`:
+1. Expand **API settings · DeepSeek** beneath **Analysis mode**.
+2. Paste your key into **DeepSeek API key**; the field masks it.
+3. Set **DeepSeek model** to a model available to your account.
+4. Select **I allow DeepSeek requests that may charge my account** if you want to generate results. Leave it unchecked to configure and check the connection only.
+5. Click **Apply settings**. This makes no network request and clears the visible key field.
+6. Optionally click **Check API connection**. It reads DeepSeek's model list without requesting generation. It does not verify account balance or model accuracy.
+7. Select **DeepSeek (opt-in)** and run the project's AI action. Your project content is sent to DeepSeek for that action.
+
+To change the model or opt-in choice, edit the controls and click **Apply settings** again. Leave the key field blank to retain the applied key, or enter a replacement. Changes take effect when applied. **Clear session key** removes the session credential and disables generation. It does not cancel requests already in progress.
+
+The app retains the applied key only in server memory for that browser session, for up to one hour after applying it. Reloading the page, expiry, or restarting the app requires applying settings again. Keys are not included in report history, SQLite data, exports, source files, or GitHub. Each browser session has separate credentials. This remains a local single-user application, not an authenticated multi-user hosting service.
+
+If you already keep a key in your local `.env`, select **Use the key configured in my local .env instead**, opt in as appropriate, and click **Apply settings**. This uses the configured key without displaying it. Entering a key in the app never writes or changes `.env`. The UI always requires its own opt-in; an environment flag cannot silently enable a new browser session.
+
+For direct Python/script use, the previous environment setup remains available:
 
 ```dotenv
 ALLOW_PAID_API=true
@@ -83,7 +97,7 @@ DEEPSEEK_API_KEY=your_key_here
 DEEPSEEK_MODEL=deepseek-flash
 ```
 
-Select **DeepSeek (opt-in)** only if you intend to use that account's allowance or balance. Source content is sent to DeepSeek when you select this mode and run generation. Check the [current pricing](https://api-docs.deepseek.com/quick_start/pricing/) and model availability. There is no automatic fallback to a paid provider. Never put a real key in source files or GitHub; `.env` is ignored.
+DeepSeek's hosted API may charge per token and is outside the strict $0 path. Check [current pricing and model availability](https://api-docs.deepseek.com/quick_start/pricing/). Offline demo and Ollama need no API key, and there is no automatic fallback to a paid provider. Never commit a real key; `.env` is ignored.
 
 ## Input format
 
@@ -104,6 +118,7 @@ Offline concern previews are limited to 1,200 characters and end with an ellipsi
 | `verify_example.py` | Repeatable live local AI check using this project's synthetic example |
 | `app.py` | Gradio screens, event wiring, and review/export workflow |
 | `domain.py` | Project-specific models, validation, and calculations |
+| `api_settings.py` | Session credential handling and metadata connection checks |
 | `ai.py` | Explicit Ollama/DeepSeek adapters and JSON schema validation |
 | `common.py` | SQLite persistence, input validation, and safe CSV exports |
 | `ui.py` | Shared-in-this-repository visual helpers and local launch settings |

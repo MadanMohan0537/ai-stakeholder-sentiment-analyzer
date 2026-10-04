@@ -11,6 +11,8 @@ import httpx
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
+from api_settings import current_settings
+
 load_dotenv()
 PROVIDERS = ["Offline demo", "Ollama (local)", "DeepSeek (opt-in)"]
 
@@ -99,19 +101,31 @@ def generate(schema: type[BaseModel], instruction: str, source: str, provider: s
         }
         headers = {}
     else:
-        if os.getenv("ALLOW_PAID_API", "false").lower() != "true":
+        session = current_settings()
+        allowed = (
+            session.allow_paid
+            if session is not None
+            else os.getenv("ALLOW_PAID_API", "false").lower() == "true"
+        )
+        if not allowed:
             raise AIError(
-                "DeepSeek may charge for usage. Set ALLOW_PAID_API=true in .env only if your usage is covered."
+                "DeepSeek may charge for usage. In API settings, opt in and click Apply settings. For scripted use, set ALLOW_PAID_API=true in .env only if your usage is covered."
             )
-        key = os.getenv("DEEPSEEK_API_KEY", "").strip()
+        key = (
+            session.api_key
+            if session is not None
+            else os.getenv("DEEPSEEK_API_KEY", "").strip()
+        )
         if not key:
             raise AIError(
-                "Set DEEPSEEK_API_KEY in your local .env file. Never commit it."
+                "Enter and apply your API key in API settings, or set DEEPSEEK_API_KEY for scripted use. Never commit it."
             )
         url = "https://api.deepseek.com/chat/completions"
         headers = {"Authorization": "Bearer " + key}
         payload = {
-            "model": os.getenv("DEEPSEEK_MODEL", "deepseek-flash"),
+            "model": session.model
+            if session is not None
+            else os.getenv("DEEPSEEK_MODEL", "deepseek-flash"),
             "messages": messages,
             "response_format": {"type": "json_object"},
             "temperature": 0.1,
