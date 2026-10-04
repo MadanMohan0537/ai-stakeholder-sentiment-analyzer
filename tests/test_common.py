@@ -103,3 +103,17 @@ def test_local_report_roundtrip():
     assert result[0]["id"] == uid
     assert json.loads(result[0]["payload"]) == {"example": [1, 2]}
     assert history("other") == []
+
+
+@pytest.mark.parametrize("value", ["20261005", "2026-W41-1", "2026-02-30", "2026-10-05T00:00:00", " 2026-10-05", None])
+def test_dates_require_calendar_format(value):
+    from common import iso_date
+
+    with pytest.raises(ValueError, match="YYYY-MM-DD"):
+        iso_date(value, "Due date")
+
+
+def test_valid_calendar_date():
+    from common import iso_date
+
+    assert iso_date("2024-02-29").isoformat() == "2024-02-29"

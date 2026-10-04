@@ -18,3 +18,13 @@ All five apps were started as local HTTP servers. Their primary queued workflows
 The shared launcher was additionally exercised end to end on the meeting app in a fresh temporary folder containing spaces, from a different working directory. It created a real virtual environment, installed dependencies, preserved the generated settings on a second invocation, and launched the actual app. Windows and macOS launch paths are implemented but were not executed on those operating systems.
 
 `python run.py --smoke-test` is available for a real local model check on your computer. Automated provider tests use simulated responses; live Ollama inference, DeepSeek usage, and audio model quality remain unverified here. No paid API requests were made.
+
+## Continuation verification — 2026-10-04
+
+Python 3.12 on Linux: **37 tests passed** in this repository; **174 tests passed** across all five projects. This run includes the existing launcher, provider, persistence, export, and UI callback checks.
+
+New regression checks enforce real calendar dates in exactly `YYYY-MM-DD` format, including rejection of compact and ISO week dates that Python otherwise accepts. This prevents inconsistent date ordering in scheduling and allocation.
+
+Long negative, question, and ambiguous feedback now completes the offline workflow with a shortened concern preview while preserving the full 3,000-character message and evidence. The ambiguous phrase “Fine, I guess” is also covered.
+
+No live model inference or paid API requests were made during this continuation.

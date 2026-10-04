@@ -86,7 +86,11 @@ Select **DeepSeek (opt-in)** only if you intend to use that account's allowance 
 
 ## Input format
 
+Dates must be real calendar dates in exactly `YYYY-MM-DD` format. Compact dates such as `20261005` and week dates such as `2026-W41-1` are rejected.
+
 CSV columns: `id,date,stakeholder,message`. IDs must be unique, dates use `YYYY-MM-DD`, and messages must be nonempty. Quote CSV fields containing commas. Analyze up to 100 messages per batch, with up to 3,000 characters per message. All supplied messages are included in the AI request, subject to the provider context budget.
+
+Offline concern previews are limited to 1,200 characters and end with an ellipsis when shortened. The original message and evidence quote remain complete in the review table and JSON/CSV exports.
 
 ## Data and architecture
 

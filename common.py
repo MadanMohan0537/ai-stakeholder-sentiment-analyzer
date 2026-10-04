@@ -134,6 +134,11 @@ def number(value, label: str, low=0, high=100000) -> float:
 
 def iso_date(value: str, label="Date") -> date:
     try:
-        return date.fromisoformat(value)
+        parsed = date.fromisoformat(value)
+        # All stored dates must sort chronologically as strings. Python also
+        # accepts compact and ISO week dates, which do not have that property.
+        if value != parsed.isoformat():
+            raise ValueError("Noncanonical calendar date")
+        return parsed
     except (ValueError, TypeError) as exc:
         raise ValueError(f"{label} must use YYYY-MM-DD.") from exc

@@ -104,7 +104,7 @@ def analyze(rows: list[dict], provider: str) -> Analysis:
                 if positive and negative
                 else ("positive" if positive else "negative" if negative else "neutral")
             )
-            if re.search(r"\b(sure,? whatever|yeah right|fine,? I guess)\b", text):
+            if re.search(r"\b(sure,? whatever|yeah right|fine,? i guess)\b", text):
                 sentiment = "unclear"
             topics = [
                 topic
@@ -125,6 +125,10 @@ def analyze(rows: list[dict], provider: str) -> Analysis:
                 if negative or "?" in text or sentiment == "unclear"
                 else "No explicit concern detected by keyword rules."
             )
+            # Concern is a compact preview; retain the complete source in
+            # evidence and in the original row for review and export.
+            if len(concern) > 1200:
+                concern = concern[:1199] + "…"
             findings.append(
                 Finding(
                     source_id=row["id"],

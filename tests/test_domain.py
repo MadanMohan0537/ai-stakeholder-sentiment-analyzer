@@ -46,3 +46,26 @@ def test_negation():
 def test_invalid_source_date():
     with pytest.raises(ValueError):
         read_feedback("id,date,stakeholder,message\na,yesterday,Client,Hello")
+
+
+@pytest.mark.parametrize("prefix", ["Concern: ", "Question? ", "Fine, I guess. "])
+def test_long_feedback_retains_full_evidence(prefix):
+    import csv
+    import io
+    from domain import Analysis, records
+
+    message = (prefix + "Additional project context. " * 120)[:3000]
+    stream = io.StringIO()
+    writer = csv.writer(stream)
+    writer.writerow(["id", "date", "stakeholder", "message"])
+    writer.writerow(["long", "2026-10-05", "Client", message])
+    rows = read_feedback(stream.getvalue())
+    result = analyze(rows, "Offline demo")
+    finding = result.findings[0]
+    assert finding.evidence == message
+    assert len(finding.concern) <= 1200
+    assert finding.concern.endswith("…")
+    if prefix == "Fine, I guess. ":
+        assert finding.sentiment == "unclear"
+    assert records(result, rows)[0]["message"] == message
+    Analysis.model_validate_json(result.model_dump_json())
