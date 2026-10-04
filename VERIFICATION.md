@@ -28,3 +28,15 @@ New regression checks enforce real calendar dates in exactly `YYYY-MM-DD` format
 Long negative, question, and ambiguous feedback now completes the offline workflow with a shortened concern preview while preserving the full 3,000-character message and evidence. The ambiguous phrase “Fine, I guess” is also covered.
 
 No live model inference or paid API requests were made during this continuation.
+
+## Input and lifecycle regression pass
+
+After merging the newer repository commits: **44 tests passed** here and **214 tests passed** across all five projects, on Python 3.12/Linux.
+
+The additional tests cover strict calendar dates, duplicate/empty CSV headers, malformed quoting, UTF-8 byte limits, long report excerpts, conservative owner/date evidence, long feedback, and safe archive restoration as applicable to each app. All existing domain and callback workflows still pass.
+
+A real local Ollama verification was attempted using Ollama 0.35.1. The runtime started, but downloading the local model was blocked by this environment's network restriction on the storage redirect. **No live model inference completed.** The failure was not worked around with a paid provider.
+
+Use `python run.py --verify-example` on a computer with a downloaded Ollama model to repeat the project's example checks. It uses synthetic data, never selects DeepSeek, and does not save application records. A passing sample is an integration check, not a general accuracy benchmark. The existing `--smoke-test` remains the smaller structured-response check.
+
+The new example command was exercised through the launcher for all five apps against a simulated local HTTP provider. Success returned exit code 0 without creating application records; a semantically incomplete meeting result correctly returned exit code 1. These checks validate the command and error path, not live model accuracy.

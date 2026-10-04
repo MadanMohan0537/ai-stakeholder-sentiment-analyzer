@@ -105,7 +105,17 @@ def test_local_report_roundtrip():
     assert history("other") == []
 
 
-@pytest.mark.parametrize("value", ["20261005", "2026-W41-1", "2026-02-30", "2026-10-05T00:00:00", " 2026-10-05", None])
+@pytest.mark.parametrize(
+    "value",
+    [
+        "20261005",
+        "2026-W41-1",
+        "2026-02-30",
+        "2026-10-05T00:00:00",
+        " 2026-10-05",
+        None,
+    ],
+)
 def test_dates_require_calendar_format(value):
     from common import iso_date
 

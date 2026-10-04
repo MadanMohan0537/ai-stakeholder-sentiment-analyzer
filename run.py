@@ -109,6 +109,11 @@ def main(argv=None) -> int:
         action="store_true",
         help="Generate a tiny synthetic response using local Ollama only.",
     )
+    mode.add_argument(
+        "--verify-example",
+        action="store_true",
+        help="Verify this project using its synthetic example and local Ollama only.",
+    )
     args = parser.parse_args(argv)
     if sys.version_info[:2] not in SUPPORTED:
         print(
@@ -125,6 +130,8 @@ def main(argv=None) -> int:
             if args.check or args.smoke_test
             else [str(python), "app.py"]
         )
+        if args.verify_example:
+            command = [str(python), "verify_example.py"]
         if args.smoke_test:
             command.append("--generate")
         return subprocess.run(command, cwd=ROOT).returncode

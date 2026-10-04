@@ -109,12 +109,23 @@ def read_upload(path: str | None, max_bytes: int = 1_000_000) -> str:
 
 
 def parse_csv(text: str, required: set[str]) -> list[dict]:
-    if len(text) > 1_000_000:
+    if len(text.encode("utf-8")) > 1_000_000:
         raise ValueError("CSV exceeds 1 MB.")
-    reader = csv.DictReader(io.StringIO(text.strip()))
-    if not reader.fieldnames or not required.issubset(reader.fieldnames):
-        raise ValueError("CSV requires columns: " + ", ".join(sorted(required)))
-    rows = list(reader)
+    try:
+        reader = csv.DictReader(io.StringIO(text.strip().lstrip("\ufeff")), strict=True)
+        fields = reader.fieldnames
+        if fields and (
+            len(fields) != len(set(fields))
+            or any(not field.strip() for field in fields)
+        ):
+            raise ValueError("CSV column names must be nonempty and unique.")
+        if not fields or not required.issubset(fields):
+            raise ValueError("CSV requires columns: " + ", ".join(sorted(required)))
+        rows = list(reader)
+    except csv.Error as exc:
+        raise ValueError(
+            "CSV contains malformed quoting. Export it again as a standard UTF-8 CSV."
+        ) from exc
     if not rows or len(rows) > 1000:
         raise ValueError("Supply between 1 and 1,000 CSV rows.")
     if any(None in row or any(v is None for v in row.values()) for row in rows):

@@ -38,9 +38,10 @@ Useful setup commands:
 python run.py --setup-only   # Install dependencies without starting the app
 python run.py --check        # Check local Ollama and the configured model
 python run.py --smoke-test   # Test one tiny synthetic response with local AI
+python run.py --verify-example  # Run this project's sample with real local AI
 ```
 
-The checks return exit code `0` on success and `1` when setup or inference needs attention. `--check` only reads model metadata. `--smoke-test` uses your local model and compute; it never selects DeepSeek. Neither command downloads models automatically. A missing Ollama service does not prevent offline demo mode from running.
+The checks return exit code `0` on success and `1` when setup or inference needs attention. `--check` only reads model metadata. `--smoke-test` uses your local model and compute; it never selects DeepSeek. None of these checks downloads models automatically. `--verify-example` runs this project's synthetic example and checks relevant output constraints without saving application records. A failed check may indicate a model limitation; it does not fall back to a paid API. A missing Ollama service does not prevent offline demo mode from running.
 
 Manual setup is also supported: create a virtual environment with `python -m venv .venv`, install `requirements.txt` with that environment's Python, then run `app.py`. On macOS/Linux use `.venv/bin/python`; on Windows use `.venv\Scripts\python.exe`.
 
@@ -88,6 +89,8 @@ Select **DeepSeek (opt-in)** only if you intend to use that account's allowance 
 
 Dates must be real calendar dates in exactly `YYYY-MM-DD` format. Compact dates such as `20261005` and week dates such as `2026-W41-1` are rejected.
 
+CSV imports require unique, nonempty column headers and valid quoting; duplicate columns are never silently overwritten. The CSV size limit counts UTF-8 bytes.
+
 CSV columns: `id,date,stakeholder,message`. IDs must be unique, dates use `YYYY-MM-DD`, and messages must be nonempty. Quote CSV fields containing commas. Analyze up to 100 messages per batch, with up to 3,000 characters per message. All supplied messages are included in the AI request, subject to the provider context budget.
 
 Offline concern previews are limited to 1,200 characters and end with an ellipsis when shortened. The original message and evidence quote remain complete in the review table and JSON/CSV exports.
@@ -98,6 +101,7 @@ Offline concern previews are limited to 1,200 characters and end with an ellipsi
 | --- | --- |
 | `run.py` | One-command environment setup and app launcher |
 | `local_ai_check.py` | Local model readiness and optional synthetic inference test |
+| `verify_example.py` | Repeatable live local AI check using this project's synthetic example |
 | `app.py` | Gradio screens, event wiring, and review/export workflow |
 | `domain.py` | Project-specific models, validation, and calculations |
 | `ai.py` | Explicit Ollama/DeepSeek adapters and JSON schema validation |
@@ -113,9 +117,18 @@ The server binds to `127.0.0.1`, Gradio sharing is off, and analytics are disabl
 
 ## Tests
 
+Run `python run.py --setup-only` first if the project environment does not exist.
+
 ```bash
-python -m pip install -r requirements-dev.txt
-python -m pytest -q
+# macOS / Linux
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python -m pytest -q
+```
+
+```powershell
+# Windows
+.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.venv\Scripts\python.exe -m pytest -q
 ```
 
 Tests use temporary data directories and mocked provider responses. They exercise validation, failure handling, persistence, and the sample UI callbacks without purchasing API usage. Live Ollama/DeepSeek model quality is not verified by those tests. See [VERIFICATION.md](VERIFICATION.md) for the delivered verification scope.
