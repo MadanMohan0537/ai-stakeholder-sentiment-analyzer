@@ -6,6 +6,14 @@ Built with Python, Gradio, SQLite, and optional schema-validated AI generation. 
 
 **No API key is required to start.** Offline demo mode uses deterministic rules or templates; it is explicitly not an AI model. Genuine AI generation uses your local Ollama model, DeepSeek, or another explicitly configured OpenAI-compatible API.
 
+## Review a concern before acting on it
+
+Start with an [included example](examples/), inspect each supporting quote, correct any topic or urgency labels, then export the concern report. Labels describe the supplied text, not a stakeholder's personality, internal emotions or job performance.
+
+Choose offline demo mode for a reproducible rules-based walkthrough. Choose a configured model only when you intend to send the supplied text to that endpoint. A local Ollama setup and a hosted provider have different data boundaries.
+
+For setup, begin with [the launcher](run.py). Use [verification guidance](VERIFICATION.md), [example verification](verify_example.py) and [tests](tests/) to inspect behavior beyond the interface.
+
 ## What you can do
 
 - Analyze stakeholder feedback from a CSV upload or pasted CSV.
